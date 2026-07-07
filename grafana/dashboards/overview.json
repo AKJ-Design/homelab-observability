@@ -122,13 +122,13 @@
     },
     {
       "type": "timeseries",
-      "title": "Root Disk Used %",
+      "title": "Disk Used % (largest FS per host)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
       "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "showPoints": "never" }, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 75 }, { "color": "red", "value": 90 } ] } }, "overrides": [] },
       "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
-        { "refId": "A", "expr": "100 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"} * 100 / node_filesystem_size_bytes{mountpoint=\"/\"})", "legendFormat": "{{instance}}" }
+        { "refId": "A", "expr": "100 - (max by (instance) (node_filesystem_avail_bytes{fstype=~\"ext4|xfs|btrfs\"}) / max by (instance) (node_filesystem_size_bytes{fstype=~\"ext4|xfs|btrfs\"}) * 100)", "legendFormat": "{{instance}}" }
       ]
     },
     {
