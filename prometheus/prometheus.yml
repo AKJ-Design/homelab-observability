@@ -36,7 +36,7 @@ scrape_configs:
   # ============================================================
   - job_name: vps-node
     static_configs:
-      - targets: ["100.100.100.100:9100"]
+      - targets: ["100.123.209.36:9100"]
         labels:
           instance: oracle-vps
 
@@ -50,6 +50,6 @@ scrape_configs:
       # host at  prometheus/uptime_kuma.key  containing your Kuma API key.
       password_file: /etc/prometheus/uptime_kuma.key
     static_configs:
-      - targets: ["100.100.100.100:3001"]
+      - targets: ["100.123.209.36:3001"]
         labels:
           instance: oracle-vps
