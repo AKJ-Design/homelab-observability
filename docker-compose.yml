@@ -1,0 +1,90 @@
+name: observability
+
+# Runs on your Umbrel mini PC as a *separate* Docker Compose stack,
+# alongside (not inside) Umbrel. It shares the same Docker daemon, so
+# cAdvisor automatically sees every Umbrel container too.
+
+services:
+  # ---- The brain: pulls metrics, stores them, answers PromQL ----
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: obs-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=90d"   # keep 90 days of history
+      - "--web.enable-lifecycle"               # lets you POST /-/reload
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+
+  # ---- The eyes: dashboards + PromQL query UI ----
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: obs-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=changeme   # change this before first boot
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # ---- Host metrics: CPU, RAM, disk, network, temps of the mini PC ----
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: obs-node-exporter
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "9100:9100"
+
+  # ---- Per-container metrics: CPU/RAM/net per Umbrel app ----
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: obs-cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8081:8080"   # host 8081 to avoid clashing with Umbrel apps
+
+  # ---- Bitcoin node metrics via bitcoind RPC ----
+  bitcoin-exporter:
+    image: jvstein/bitcoin-prometheus-exporter:latest
+    container_name: obs-bitcoin-exporter
+    restart: unless-stopped
+    environment:
+      - BITCOIN_RPC_HOST=${BITCOIN_RPC_HOST}
+      - BITCOIN_RPC_PORT=${BITCOIN_RPC_PORT:-8332}
+      - BITCOIN_RPC_USER=${BITCOIN_RPC_USER}
+      - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD}
+    ports:
+      - "9332:9332"
+
+volumes:
+  prometheus-data:
+  grafana-data:

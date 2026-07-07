@@ -1,0 +1,23 @@
+name: obs-vps
+
+# Runs on the Oracle VPS. Exposes host metrics so your home Prometheus
+# can scrape them. Do NOT open 9100 to the public internet — reach it
+# over Tailscale/WireGuard, or firewall it to your home IP only.
+
+services:
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: obs-node-exporter
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      # Bind to the Tailscale interface only (replace with your tailscale0 IP),
+      # or use "127.0.0.1:9100:9100" if you tunnel differently.
+      - "9100:9100"

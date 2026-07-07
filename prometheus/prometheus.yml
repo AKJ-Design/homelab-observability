@@ -1,0 +1,53 @@
+global:
+  scrape_interval: 15s       # how often Prometheus pulls each target
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus scraping itself (good for a "is it alive" baseline)
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # --- Umbrel host (the mini PC) ---
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          instance: umbrel
+
+  # --- Every container on the mini PC (incl. all Umbrel apps) ---
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]     # internal port, not the 8081 host map
+        labels:
+          instance: umbrel
+
+  # --- Bitcoin node via RPC ---
+  - job_name: bitcoin
+    scrape_interval: 60s               # RPC is heavier; poll it slower
+    static_configs:
+      - targets: ["bitcoin-exporter:9332"]
+        labels:
+          instance: umbrel-bitcoind
+
+  # ============================================================
+  # Oracle VPS.  Replace 100.x.x.x with the VPS's Tailscale IP
+  # (recommended) or a firewalled public IP.  See README.
+  # ============================================================
+  - job_name: vps-node
+    static_configs:
+      - targets: ["100.100.100.100:9100"]
+        labels:
+          instance: oracle-vps
+
+  # --- Uptime Kuma's built-in /metrics endpoint (up/down + latency of
+  #     everything Kuma already monitors, incl. your Umbrel server) ---
+  - job_name: uptime-kuma
+    metrics_path: /metrics
+    basic_auth:
+      username: ""                     # Kuma ignores the username
+      password: "PASTE_UPTIME_KUMA_API_KEY_HERE"
+    static_configs:
+      - targets: ["100.100.100.100:3001"]
+        labels:
+          instance: oracle-vps

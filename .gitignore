@@ -1,0 +1,10 @@
+# Secrets — never commit real credentials (Bitcoin RPC pw, Kuma key live here)
+.env
+
+# OS cruft
+.DS_Store
+
+# Grafana/Prometheus runtime data live in named Docker volumes, not here,
+# but ignore these just in case anyone bind-mounts locally.
+data/
+*.log
