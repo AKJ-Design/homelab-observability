@@ -46,7 +46,9 @@ scrape_configs:
     metrics_path: /metrics
     basic_auth:
       username: ""                     # Kuma ignores the username
-      password: "PASTE_UPTIME_KUMA_API_KEY_HERE"
+      # Secret is NOT stored here. Create a one-line, git-ignored file on the
+      # host at  prometheus/uptime_kuma.key  containing your Kuma API key.
+      password_file: /etc/prometheus/uptime_kuma.key
     static_configs:
       - targets: ["100.100.100.100:3001"]
         labels:

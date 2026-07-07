@@ -1,5 +1,6 @@
-# Secrets — never commit real credentials (Bitcoin RPC pw, Kuma key live here)
-.env
+# Secrets — never commit real credentials
+.env                    # Bitcoin RPC user/password
+prometheus/*.key        # Uptime Kuma API key (prometheus/uptime_kuma.key)
 
 # OS cruft
 .DS_Store
